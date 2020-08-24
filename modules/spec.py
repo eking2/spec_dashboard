@@ -61,7 +61,6 @@ def get_best_slope(df, well, start, end, span):
     subset = df.query("time_s >= @start & time_s <= @end and well_name == @well")
     chunk_dfs = [subset[i:i+span] for i in range(0, subset.shape[0], span)]
 
-    curr = 0
     lr = LinearRegression()
 
     data = []
