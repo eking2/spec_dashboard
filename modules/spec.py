@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import pandas as pd 
+import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from bs4 import BeautifulSoup
+from io import StringIO
 
 
 # def time_to_sec(time_str):
@@ -68,7 +69,7 @@ def get_best_slope(df, well, start, end, span):
 
         if len(chunk_df) != span:
             break
-        
+
         x = chunk_df['time_s'].values.reshape(-1, 1)
         y = chunk_df['reads'].values.reshape(-1, 1)
         lr.fit(x, y)
@@ -88,6 +89,33 @@ def get_best_slope(df, well, start, end, span):
     return df.head(1)
 
 
-def parse_txt(txt_path):
+def parse_txt(txt_str):
 
-    pass
+    '''parse spectramax kinetic reads from txt columns format'''
+
+    # remove starting and end info lines
+    content = txt_str.split('\n')[2:-4]
+
+    # combine back and read dataframe
+    content = '\n'.join(content)
+    df = pd.read_csv(StringIO(content), sep='\t')
+
+    # drop na columns
+    df = df.dropna(axis=1, how='any')
+
+    # convert time to delta seconds and clean temperature column name
+    df['Time'] = pd.to_timedelta(df['Time'])
+    df['Time'] = df['Time'].dt.total_seconds().astype(int)
+    df = df.rename(columns = {'Temperature(¡C)' : 'Temperature'})
+
+    # melt and rename to match xml output naming
+    df = pd.melt(df, id_vars=['Time', 'Temperature'])
+    df = df.rename(columns={'Time' : 'time_s',
+                            'Temperature' : 'temp',
+                            'variable' : 'well_name',
+                            'value' : 'reads'})
+
+    return df
+
+
+

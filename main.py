@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import altair as alt
-from modules.spec import parse_xml, get_best_slope
+from modules.spec import parse_xml, parse_txt, get_best_slope
 import io
 import base64
 
@@ -48,7 +48,7 @@ def set_lin_fit(df, plot_fit_df):
 
 
 def plot_traces(df, x_start, x_end, plot_fit_df=None):
-    
+
     '''plot absorbance traces vs time'''
 
     # human sort legend labels
@@ -73,7 +73,7 @@ def plot_traces(df, x_start, x_end, plot_fit_df=None):
             color=alt.Color('well_name', sort=wells_sorted, legend=alt.Legend(title='Well')),
             opacity = alt.condition(selection, alt.value(1), alt.value(0.2))
         ).add_selection(selection)
-        
+
         # raw
         line = alt.Chart(df).mark_line().encode(
             x=alt.X('time_s:Q', axis=alt.Axis(title='Time (s)')),
@@ -96,7 +96,7 @@ def plot_traces(df, x_start, x_end, plot_fit_df=None):
         plots = [line, start, end]
 
     p = alt.layer(*plots).properties(
-            width = 750, 
+            width = 750,
             height = 500
         ).configure_axis(labelFontSize=12, gridOpacity=0.4, titleFontSize=15,
         ).configure_legend(labelFontSize=13, titleFontSize=15,
@@ -128,12 +128,20 @@ if __name__ == '__main__':
     st.sidebar.markdown('# Options')
 
     # upload spectramax xml output
-    file_buffer = st.file_uploader('Upload Spectramax xml', type='xml')
+    file_buffer = st.file_uploader('Upload Spectramax output (xml or txt columns)', type=['xml', 'txt'])
     if file_buffer:
         text_io = io.TextIOWrapper(file_buffer, encoding='utf-16').read()
 
-        # to df
-        df = parse_xml(text_io)
+        # check file format
+        # text columns
+        if text_io.startswith('##BLOCKS'):
+            df = parse_txt(text_io)
+
+        # xml format
+        else:
+            df = parse_xml(text_io)
+
+        print(df)
 
         # add sidebar elements
         step = df['time_s'].values[1]
