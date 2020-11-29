@@ -130,7 +130,10 @@ if __name__ == '__main__':
     # upload spectramax xml output
     file_buffer = st.file_uploader('Upload Spectramax output (xml or txt columns)', type=['xml', 'txt'])
     if file_buffer:
-        text_io = io.TextIOWrapper(file_buffer, encoding='utf-16').read()
+        file_buffer.seek(0)
+        buf = file_buffer.read()
+        buf = io.BytesIO(buf)
+        text_io = io.TextIOWrapper(buf, encoding='utf-16').read()
 
         # check file format
         # text columns
